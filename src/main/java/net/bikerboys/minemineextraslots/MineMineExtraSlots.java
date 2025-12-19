@@ -43,7 +43,6 @@ public class MineMineExtraSlots {
     public static final Logger LOGGER = LogManager.getLogger();
     public static final String MODID = "minemineextraslots";
 
-    // Position Settings
     public static int xOffset = 125;
     public static int yOffset = -23;
 
@@ -82,12 +81,12 @@ public class MineMineExtraSlots {
 
         @SubscribeEvent(priority = EventPriority.LOW)
         public static void renderExtraSlots(RenderGameOverlayEvent.Post event) {
-            // FIX: Use TEXT to ensure we render ON TOP of the custom RPG HUD
+
             if (event.getType() != RenderGameOverlayEvent.ElementType.TEXT) return;
 
             Minecraft mc = Minecraft.getInstance();
             if (mc.level == null || mc.player == null) return;
-            if (mc.options.hideGui) return; // Don't render if F1 is pressed
+            if (mc.options.hideGui) return;
 
             PlayerEntity player = mc.player;
             IEntityStats entityStats = EntityStatsCapability.get(player);
@@ -99,7 +98,6 @@ public class MineMineExtraSlots {
             int screenWidth = mc.getWindow().getGuiScaledWidth();
             int screenHeight = mc.getWindow().getGuiScaledHeight();
 
-            // Center Anchor
             int baseX = (screenWidth / 2) + MineMineExtraSlots.xOffset;
             int baseY = screenHeight + MineMineExtraSlots.yOffset;
             int spacing = 25;
@@ -107,7 +105,7 @@ public class MineMineExtraSlots {
             int activeSlots = MineMineExtraSlots.CLIENT_SLOT_COUNT;
 
             event.getMatrixStack().pushPose();
-            // Translate Z to 100 to appear above standard elements
+
             event.getMatrixStack().translate(0, 0, 100);
 
             for (int i = 0; i < activeSlots; i++) {
@@ -125,13 +123,11 @@ public class MineMineExtraSlots {
                 RenderSystem.enableBlend();
                 RenderSystem.defaultBlendFunc();
 
-                // === 1. DRAW EMPTY SLOT ===
                 if (abl == null) {
                     RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-                    // Use blit or drawTexturedModalRect
                     mc.gui.blit(event.getMatrixStack(), x, y, 0, 0, 23, 23);
                 }
-                // === 2. DRAW ABILITY SLOT ===
+
                 else {
                     boolean hasDisplayText = false;
                     String displayText = "";
@@ -174,7 +170,7 @@ public class MineMineExtraSlots {
                         slotDecoComponent.get().triggerPostRenderEvents(player, mc, event.getMatrixStack(), (float) x, (float) y, event.getPartialTicks());
                     }
 
-                    // Text overlay (Cool down etc)
+
                     event.getMatrixStack().translate(0, 0, 5);
                     if (number > 0.0) {
                         String numText = hasDisplayText ? displayText : String.format("%.1f", number / 20.0) + " ";
@@ -186,8 +182,7 @@ public class MineMineExtraSlots {
                     event.getMatrixStack().translate(0, 0, -5);
                 }
 
-                // === 3. DRAW KEYBIND ===
-                KeyBinding key = (i < EXTRA_SLOT_KEYS.length) ? EXTRA_SLOT_KEYS[i] : null;
+                                KeyBinding key = (i < EXTRA_SLOT_KEYS.length) ? EXTRA_SLOT_KEYS[i] : null;
                 if (key != null) {
                     StringBuilder sb = new StringBuilder();
                     colorTicks = (colorTicks + 1) % 2000;
@@ -205,7 +200,7 @@ public class MineMineExtraSlots {
                     }
 
                     event.getMatrixStack().pushPose();
-                    // Draw text higher up (Z=10 relative to current, which is 100, so 110 total)
+
                     event.getMatrixStack().translate(x + 18, y + 16, 10.0);
                     event.getMatrixStack().scale(0.66F, 0.66F, 0.66F);
                     WyHelper.drawStringWithBorder(mc.font, event.getMatrixStack(), sb.toString(), 0, 0, -1);

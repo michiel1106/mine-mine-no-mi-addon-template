@@ -12,21 +12,17 @@ public class S2CSyncConfigPacket {
     public S2CSyncConfigPacket(int slotCount) {
         this.slotCount = slotCount;
     }
-
-    // Decoder
     public S2CSyncConfigPacket(PacketBuffer buffer) {
         this.slotCount = buffer.readInt();
     }
 
-    // Encoder
     public void encode(PacketBuffer buffer) {
         buffer.writeInt(this.slotCount);
     }
 
-    // Handler
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            // Update the static variable on the Client side
+
             MineMineExtraSlots.CLIENT_SLOT_COUNT = this.slotCount;
             MineMineExtraSlots.LOGGER.info("Synced extra slots from server: " + this.slotCount);
         });

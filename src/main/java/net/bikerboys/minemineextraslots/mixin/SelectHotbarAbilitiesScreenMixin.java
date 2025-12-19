@@ -91,7 +91,6 @@ public abstract class SelectHotbarAbilitiesScreenMixin extends Screen {
 
             final int buttonIndex = i;
 
-            // Create the button with the click handler
             AbilitySlotButton slotButton = new AbilitySlotButton(
                     ability,
                     baseX + i * spacing,
@@ -127,7 +126,6 @@ public abstract class SelectHotbarAbilitiesScreenMixin extends Screen {
                         btn.setIsPressed(false);
                     }
 
-                    // Send remove packet
                     WyNetwork.sendToServer(new CRemoveAbilityPacket(slotId));
                     this.abilityDataProps.setEquippedAbility(slotId, null);
                     btn.setAbility(null);

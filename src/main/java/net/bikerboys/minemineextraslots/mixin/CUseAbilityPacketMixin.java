@@ -23,8 +23,8 @@ public class CUseAbilityPacketMixin {
 
 
         /**
-         * @author You
-         * @reason Remove the slot ID limit check to allow addon slots (80+)
+         * @author
+         * @reason
          */
         @Overwrite
         public static void handle(CUseAbilityPacket message, Supplier<NetworkEvent.Context> ctx) {
@@ -39,9 +39,7 @@ public class CUseAbilityPacketMixin {
 
                     IAbilityData abilityDataProps = AbilityDataCapability.get(player);
 
-                    // --- FIX: Use the Accessor here instead of casting to GetSlot ---
                     int targetSlot = ((GetSlot) message).getSlot();
-                    // -----------------------------------------------------------------
 
                     Ability abl = (Ability) abilityDataProps.getEquippedAbility(targetSlot);
                     AbilityCanUseEvent pre = new AbilityCanUseEvent(player, abl);
@@ -49,15 +47,11 @@ public class CUseAbilityPacketMixin {
                     if (!MinecraftForge.EVENT_BUS.post(pre)) {
                         if (abl != null && !player.isSpectator()) {
                             try {
-                                // Logic checks from original mod
                                 if (!(abl instanceof AirDoorAbility) && DoaPassiveEvents.isInsideDoor(player)) return;
                                 if (abl instanceof ChargeableAbility && abl.isCharging() && !((ChargeableAbility) abl).isCancelable()) return;
 
-                                // Fixed empty if block logic
                                 if (abl instanceof MorphAbility && !abl.isContinuous()) {
-                                    // Original mod usually returns here if morph isn't continuous?
-                                    // Or does nothing? Leaving as is based on your snippet,
-                                    // but standard behavior is usually to return if invalid.
+
                                 }
 
                                 abl.use(player);
