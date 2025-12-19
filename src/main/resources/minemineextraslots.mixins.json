@@ -6,8 +6,11 @@
   "refmap": "minemineextraslots.refmap.json",
   "mixins": [
     "AbilityDataBaseMixin",
+    "CEquipAbilityPacketAccessor",
+    "CEquipAbilityPacketMixin",
     "CUseAbilityPacketMixin",
     "GetSlot"
+
   ],
   "client": [
     "SelectHotbarAbilitiesScreenMixin"
