@@ -4,6 +4,8 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/MineMineNoMiAddonTemplate.main.iml" filepath="$PROJECT_DIR$/.idea/modules/MineMineNoMiAddonTemplate.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/MineMineNoMiAddonTemplate.test.iml" filepath="$PROJECT_DIR$/.idea/modules/MineMineNoMiAddonTemplate.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/bikerboys.mas.MineMineNoMiAddonTemplate.main.iml" filepath="$PROJECT_DIR$/.idea/modules/bikerboys.mas.MineMineNoMiAddonTemplate.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/bikerboys.mas.MineMineNoMiAddonTemplate.test.iml" filepath="$PROJECT_DIR$/.idea/modules/bikerboys.mas.MineMineNoMiAddonTemplate.test.iml" />
     </modules>
   </component>
 </project>
