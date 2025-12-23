@@ -1,6 +1,7 @@
 package net.bikerboys.minemineextraslots;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import static net.bikerboys.minemineextraslots.client.ClientEvents.EXTRA_SLOT_KEYS;
 import net.bikerboys.minemineextraslots.config.AddonConfig;
 import net.bikerboys.minemineextraslots.networking.AddonNetwork;
 import net.bikerboys.minemineextraslots.networking.S2CSyncConfigPacket;
@@ -12,6 +13,8 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.common.*;
+import net.minecraftforge.event.*;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -22,6 +25,7 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.server.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import xyz.pixelatedw.mineminenomi.api.abilities.IAbility;
@@ -32,8 +36,10 @@ import xyz.pixelatedw.mineminenomi.data.entity.ability.IAbilityData;
 import xyz.pixelatedw.mineminenomi.data.entity.entitystats.EntityStatsCapability;
 import xyz.pixelatedw.mineminenomi.data.entity.entitystats.IEntityStats;
 import xyz.pixelatedw.mineminenomi.init.ModAbilityKeys;
+import static xyz.pixelatedw.mineminenomi.init.ModKeybindings.changeAbilityMode;
 import xyz.pixelatedw.mineminenomi.init.ModResources;
 import xyz.pixelatedw.mineminenomi.packets.client.ability.CUseAbilityPacket;
+import xyz.pixelatedw.mineminenomi.packets.client.ability.components.*;
 import xyz.pixelatedw.mineminenomi.wypi.*;
 
 import java.util.Optional;
@@ -48,31 +54,30 @@ public class MineMineExtraSlots {
 
     public static int CLIENT_SLOT_COUNT = 5;
     public static final int MAX_SLOT_CAP = 5;
-    public static final KeyBinding[] EXTRA_SLOT_KEYS = new KeyBinding[MAX_SLOT_CAP];
+
 
     public MineMineExtraSlots() {
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, AddonConfig.SERVER_SPEC);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, AddonConfig.SERVER_SPEC);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::commonSetup);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::clientSetup);
+
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         AddonNetwork.register();
     }
 
-    @SubscribeEvent
-    public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (!event.getPlayer().level.isClientSide) {
-            int slots = AddonConfig.SERVER.EXTRA_SLOTS.get();
-            AddonNetwork.sendToClient(new S2CSyncConfigPacket(slots), (ServerPlayerEntity) event.getPlayer());
-        }
-    }
+    @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+    public static class ServerEvents {
+        @SubscribeEvent
+        public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+            if (!(event.getPlayer() instanceof ServerPlayerEntity)) return;
 
-    private void clientSetup(final FMLClientSetupEvent event) {
-        for (int i = 0; i < MAX_SLOT_CAP; i++) {
-            EXTRA_SLOT_KEYS[i] = new KeyBinding("key.minemineextraslots.slot_" + (i + 1), -1, "key.categories.mineminenomi");
-            ClientRegistry.registerKeyBinding(EXTRA_SLOT_KEYS[i]);
+            ServerPlayerEntity player = (ServerPlayerEntity) event.getPlayer();
+            int slots = AddonConfig.SERVER.EXTRA_SLOTS.get();
+
+            AddonNetwork.sendTo(new S2CSyncConfigPacket(slots), player);
         }
+
     }
 
     @Mod.EventBusSubscriber(modid = MODID, value = Dist.CLIENT)
@@ -216,19 +221,45 @@ public class MineMineExtraSlots {
         public static void onKeyInput(InputEvent.KeyInputEvent event) {
             Minecraft mc = Minecraft.getInstance();
             PlayerEntity player = mc.player;
-            if (player == null) return;
+
+            if (player == null || mc.screen != null) return;
+
             IEntityStats entityStats = EntityStatsCapability.get(player);
-            if (entityStats == null || !entityStats.isInCombatMode()) return;
             IAbilityData abilityData = AbilityDataCapability.get(player);
-            if (abilityData == null) return;
+            if (entityStats == null || abilityData == null) return;
+
+            if (event.getAction() == 0) return;
 
             int activeSlots = MineMineExtraSlots.CLIENT_SLOT_COUNT;
 
             for (int i = 0; i < activeSlots; i++) {
                 if (i >= EXTRA_SLOT_KEYS.length || EXTRA_SLOT_KEYS[i] == null) continue;
+
                 if (EXTRA_SLOT_KEYS[i].consumeClick()) {
+
                     int slotId = 80 + i + (abilityData.getCombatBarSet() * 8);
-                    WyNetwork.sendToServer(new CUseAbilityPacket(slotId));
+                    IAbility abl = abilityData.getEquippedAbility(slotId);
+
+                    if (abl != null) {
+                        boolean isOnCooldown = false;
+                        if (abl.hasComponent(ModAbilityKeys.COOLDOWN)) {
+                            isOnCooldown = abl.getComponent(ModAbilityKeys.COOLDOWN).map(comp ->
+                                    comp.isOnCooldown() && comp.getCooldown() > 10.0F
+                            ).orElse(false);
+                        }
+
+                        if (!isOnCooldown) {
+                            if (entityStats.isInCombatMode()) {
+                                if (changeAbilityMode.isDown() && abl.hasComponent(ModAbilityKeys.ALT_MODE)) {
+                                    WyNetwork.sendToServer(new CChangeAbilityAltModePacket(slotId));
+                                } else {
+                                    WyNetwork.sendToServer(new CUseAbilityPacket(slotId));
+                                }
+                            } else {
+                                player.inventory.selected = i % 8;
+                            }
+                        }
+                    }
                 }
             }
         }

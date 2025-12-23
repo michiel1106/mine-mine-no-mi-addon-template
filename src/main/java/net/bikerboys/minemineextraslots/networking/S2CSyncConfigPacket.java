@@ -1,31 +1,41 @@
 package net.bikerboys.minemineextraslots.networking;
 
+import net.bikerboys.minemineextraslots.*;
 import net.minecraft.network.PacketBuffer;
+import net.minecraftforge.api.distmarker.*;
+import net.minecraftforge.fml.*;
 import net.minecraftforge.fml.network.NetworkEvent;
-import net.bikerboys.minemineextraslots.MineMineExtraSlots;
+import net.minecraftforge.fml.network.NetworkDirection;
 
 import java.util.function.Supplier;
 
 public class S2CSyncConfigPacket {
-    private final int slotCount;
+    public int slotCount;
+
+    public S2CSyncConfigPacket() {} // needed for decode
 
     public S2CSyncConfigPacket(int slotCount) {
         this.slotCount = slotCount;
     }
-    public S2CSyncConfigPacket(PacketBuffer buffer) {
-        this.slotCount = buffer.readInt();
-    }
 
+    // write to buffer
     public void encode(PacketBuffer buffer) {
         buffer.writeInt(this.slotCount);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
+    // read from buffer
+    public static S2CSyncConfigPacket decode(PacketBuffer buffer) {
+        S2CSyncConfigPacket msg = new S2CSyncConfigPacket();
+        msg.slotCount = buffer.readInt();
+        return msg;
+    }
 
-            MineMineExtraSlots.CLIENT_SLOT_COUNT = this.slotCount;
-            MineMineExtraSlots.LOGGER.info("Synced extra slots from server: " + this.slotCount);
-        });
+    // handle packet on client
+    public static void handle(S2CSyncConfigPacket message, Supplier<NetworkEvent.Context> ctx) {
+        ctx.get().enqueueWork(() ->
+                // Make sure it's only executed on the physical client
+                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientPacketHandlerClass.handlePacket(message, ctx))
+        );
         ctx.get().setPacketHandled(true);
     }
 }

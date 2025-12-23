@@ -1,13 +1,12 @@
 package net.bikerboys.minemineextraslots.networking;
 
-import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.entity.player.*;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.network.NetworkDirection;
 import net.minecraftforge.fml.network.NetworkRegistry;
 import net.minecraftforge.fml.network.PacketDistributor;
 import net.minecraftforge.fml.network.simple.SimpleChannel;
 import net.bikerboys.minemineextraslots.MineMineExtraSlots;
-
 public class AddonNetwork {
     private static final String PROTOCOL_VERSION = "1";
     public static SimpleChannel CHANNEL;
@@ -21,19 +20,21 @@ public class AddonNetwork {
         );
 
         int id = 0;
-        CHANNEL.registerMessage(id++,
+        CHANNEL.registerMessage(
+                id++,
                 S2CSyncConfigPacket.class,
                 S2CSyncConfigPacket::encode,
-                S2CSyncConfigPacket::new,
-                S2CSyncConfigPacket::handle
+                S2CSyncConfigPacket::decode,
+                S2CSyncConfigPacket::handle,
+                java.util.Optional.of(NetworkDirection.PLAY_TO_CLIENT) // ensure client-only
         );
     }
 
-    public static void sendToClient(Object packet, ServerPlayerEntity player) {
-        CHANNEL.sendTo(packet, player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
+    public static void sendTo(S2CSyncConfigPacket packet, ServerPlayerEntity player) {
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
     }
 
-    public static void sendToAll(Object packet) {
+    public static void sendToAll(S2CSyncConfigPacket packet) {
         CHANNEL.send(PacketDistributor.ALL.noArg(), packet);
     }
 }

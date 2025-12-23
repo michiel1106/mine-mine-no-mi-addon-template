@@ -55,7 +55,7 @@ public abstract class SelectHotbarAbilitiesScreenMixin extends Screen {
         super(title);
     }
 
-    @Inject(method = "tick()V", at = @At("TAIL"))
+    @Inject(method = "tick()V", at = @At("TAIL"), remap = true)
     private void tickExtraSlots(CallbackInfo ci) {
         for (int i = 0; i < this.extraAbilitySlots.size(); i++) {
             int slotId = groupSelected * 8 + 80 + i;
@@ -106,14 +106,14 @@ public abstract class SelectHotbarAbilitiesScreenMixin extends Screen {
         }
     }
 
-    @Inject(method = "render(Lcom/mojang/blaze3d/matrix/MatrixStack;IIF)V", at = @At("TAIL"))
+    @Inject(method = "render(Lcom/mojang/blaze3d/matrix/MatrixStack;IIF)V", at = @At("TAIL"), remap = true)
     public void renderExtraSlots(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
         for (AbilitySlotButton btn : this.extraAbilitySlots) {
             btn.render(matrixStack, mouseX, mouseY, partialTicks);
         }
     }
 
-    @Inject(method = "mouseClicked(DDI)Z", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "mouseClicked(DDI)Z", at = @At("HEAD"), cancellable = true, remap = true)
     public void mouseClickedExtraSlots(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
         if (button == 1) {
             for (int i = 0; i < this.extraAbilitySlots.size(); i++) {
@@ -137,7 +137,7 @@ public abstract class SelectHotbarAbilitiesScreenMixin extends Screen {
         }
     }
 
-    @Inject(method = "mouseReleased(DDI)Z", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "mouseReleased(DDI)Z", at = @At("HEAD"), cancellable = true, remap = true)
     public void mouseReleasedExtraSlots(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
         if (this.getSelectionMode() == Selection.DRAG_AND_DROP && this.hasDraggedAbility() && button == 0) {
             for (int i = 0; i < this.extraAbilitySlots.size(); i++) {
