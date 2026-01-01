@@ -1,12 +1,11 @@
 package net.bikerboys.minemineextraslots.networking;
 
-import net.minecraft.entity.player.*;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.network.NetworkDirection;
-import net.minecraftforge.fml.network.NetworkRegistry;
-import net.minecraftforge.fml.network.PacketDistributor;
-import net.minecraftforge.fml.network.simple.SimpleChannel;
 import net.bikerboys.minemineextraslots.MineMineExtraSlots;
+import net.minecraft.resources.*;
+import net.minecraft.server.level.*;
+import net.minecraftforge.network.*;
+import net.minecraftforge.network.simple.*;
+
 public class AddonNetwork {
     private static final String PROTOCOL_VERSION = "1";
     public static SimpleChannel CHANNEL;
@@ -30,7 +29,7 @@ public class AddonNetwork {
         );
     }
 
-    public static void sendTo(S2CSyncConfigPacket packet, ServerPlayerEntity player) {
+    public static void sendTo(S2CSyncConfigPacket packet, ServerPlayer player) {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
     }
 

@@ -1,7 +1,7 @@
 package net.bikerboys.minemineextraslots;
 
 import net.bikerboys.minemineextraslots.networking.*;
-import net.minecraftforge.fml.network.*;
+import net.minecraftforge.network.*;
 
 import java.util.function.*;
 

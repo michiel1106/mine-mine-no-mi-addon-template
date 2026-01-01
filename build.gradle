@@ -37,6 +37,10 @@ minecraft {
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
 
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+
+
             mods {
                 "${mod_id}" {
                     source sourceSets.main
@@ -83,6 +87,7 @@ dependencies {
 
    // implementation fg.deobf("curse.maven:mine-mine-no-mi-78726:7170763")
     implementation fg.deobf(files("libs/file.jar"))
+
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 

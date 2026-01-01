@@ -1,11 +1,12 @@
 package net.bikerboys.minemineextraslots.networking;
 
 import net.bikerboys.minemineextraslots.*;
-import net.minecraft.network.PacketBuffer;
+
+import net.minecraft.network.*;
 import net.minecraftforge.api.distmarker.*;
 import net.minecraftforge.fml.*;
-import net.minecraftforge.fml.network.NetworkEvent;
-import net.minecraftforge.fml.network.NetworkDirection;
+import net.minecraftforge.network.*;
+
 
 import java.util.function.Supplier;
 
@@ -19,12 +20,12 @@ public class S2CSyncConfigPacket {
     }
 
     // write to buffer
-    public void encode(PacketBuffer buffer) {
+    public void encode(FriendlyByteBuf buffer) {
         buffer.writeInt(this.slotCount);
     }
 
     // read from buffer
-    public static S2CSyncConfigPacket decode(PacketBuffer buffer) {
+    public static S2CSyncConfigPacket decode(FriendlyByteBuf buffer) {
         S2CSyncConfigPacket msg = new S2CSyncConfigPacket();
         msg.slotCount = buffer.readInt();
         return msg;
