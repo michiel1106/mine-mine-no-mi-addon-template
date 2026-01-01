@@ -1,22 +1,22 @@
 package net.bikerboys.minemineextraslots.mixin;
 
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.resources.*;
 import net.minecraft.util.*;
-import net.minecraftforge.fml.network.NetworkDirection;
-import net.minecraftforge.fml.network.NetworkEvent;
+
+import net.minecraft.world.entity.player.*;
+import net.minecraftforge.network.*;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
-import xyz.pixelatedw.mineminenomi.api.ModRegistries;
+import xyz.pixelatedw.mineminenomi.api.*;
 import xyz.pixelatedw.mineminenomi.api.abilities.Ability;
 import xyz.pixelatedw.mineminenomi.api.abilities.AbilityCore;
 import xyz.pixelatedw.mineminenomi.api.abilities.IAbility;
 import xyz.pixelatedw.mineminenomi.api.abilities.components.*;
-import xyz.pixelatedw.mineminenomi.data.entity.ability.AbilityDataCapability;
+import xyz.pixelatedw.mineminenomi.data.entity.ability.AbilityCapability;
 import xyz.pixelatedw.mineminenomi.data.entity.ability.IAbilityData;
-import xyz.pixelatedw.mineminenomi.init.ModAbilityKeys;
+import xyz.pixelatedw.mineminenomi.init.*;
 import xyz.pixelatedw.mineminenomi.packets.client.ability.CEquipAbilityPacket;
 import xyz.pixelatedw.mineminenomi.packets.server.ability.SEquipAbilityPacket;
-import xyz.pixelatedw.mineminenomi.wypi.WyNetwork;
 
 import java.util.function.Supplier;
 
@@ -34,7 +34,7 @@ public class CEquipAbilityPacketMixin {
         if (context.getDirection() == NetworkDirection.PLAY_TO_SERVER) {
             context.enqueueWork(() -> {
                 try {
-                    PlayerEntity player = context.getSender();
+                    Player player = context.getSender();
                     if (player != null) {
                         // --- USE ACCESSOR TO GET PRIVATE FIELDS ---
                         int slot = ((CEquipAbilityPacketAccessor) message).getSlot();
@@ -43,23 +43,23 @@ public class CEquipAbilityPacketMixin {
 
                         // REMOVED: if (message.slot <= maxBars) check
 
-                        IAbilityData abilityDataProps = AbilityDataCapability.get(player);
+                        IAbilityData abilityDataProps = AbilityCapability.get(player).get();
                         Ability oldAbility = (Ability) abilityDataProps.getEquippedAbility(slot);
 
                         // Checks regarding the OLD ability (if one was already there)
                         if (oldAbility != null) {
-                            if (oldAbility.hasComponent(ModAbilityKeys.COOLDOWN) && ((CooldownComponent) oldAbility.getComponent(ModAbilityKeys.COOLDOWN).get()).isOnCooldown()) return;
-                            if (oldAbility.hasComponent(ModAbilityKeys.DISABLE) && ((DisableComponent) oldAbility.getComponent(ModAbilityKeys.DISABLE).get()).isDisabled()) return;
-                            if (oldAbility.hasComponent(ModAbilityKeys.CONTINUOUS) && ((ContinuousComponent) oldAbility.getComponent(ModAbilityKeys.CONTINUOUS).get()).isContinuous()) return;
-                            if (oldAbility.hasComponent(ModAbilityKeys.CHARGE) && ((ChargeComponent) oldAbility.getComponent(ModAbilityKeys.CHARGE).get()).isCharging()) return;
+                            if (oldAbility.hasComponent(ModAbilityComponents.COOLDOWN.get()) && ((CooldownComponent) oldAbility.getComponent(ModAbilityComponents.COOLDOWN.get()).get()).isOnCooldown()) return;
+                            if (oldAbility.hasComponent(ModAbilityComponents.DISABLE.get()) && ((DisableComponent) oldAbility.getComponent(ModAbilityComponents.DISABLE.get()).get()).isDisabled()) return;
+                            if (oldAbility.hasComponent(ModAbilityComponents.CONTINUOUS.get()) && ((ContinuousComponent) oldAbility.getComponent(ModAbilityComponents.CONTINUOUS.get()).get()).isContinuous()) return;
+                            if (oldAbility.hasComponent(ModAbilityComponents.CHARGE.get()) && ((ChargeComponent) oldAbility.getComponent(ModAbilityComponents.CHARGE.get()).get()).isCharging()) return;
                         }
 
-                        AbilityCore core = (AbilityCore) ModRegistries.ABILITIES.getValue(abilityId);
+                        AbilityCore core = WyRegistry.ABILITIES.get().getValue(abilityId);
                         if (core != null) {
                             if (abilityDataProps.hasUnlockedAbility(core)) {
                                 IAbility ability = core.createAbility();
                                 abilityDataProps.setEquippedAbility(slot, ability);
-                                WyNetwork.sendToAllTrackingAndSelf(new SEquipAbilityPacket(player.getId(), slot, core), player);
+                                ModNetwork.sendToAllTrackingAndSelf(new SEquipAbilityPacket(player.getId(), slot, core), player);
                             }
                         }
                     }

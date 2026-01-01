@@ -1,9 +1,8 @@
 package net.bikerboys.minemineextraslots.mixin;
 
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.entity.player.*;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.network.NetworkDirection;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraftforge.network.*;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import xyz.pixelatedw.mineminenomi.abilities.doa.*;
@@ -11,8 +10,7 @@ import xyz.pixelatedw.mineminenomi.api.abilities.Ability;
 import xyz.pixelatedw.mineminenomi.api.abilities.ChargeableAbility;
 import xyz.pixelatedw.mineminenomi.api.abilities.MorphAbility;
 import xyz.pixelatedw.mineminenomi.api.events.ability.*;
-import xyz.pixelatedw.mineminenomi.data.entity.ability.AbilityDataCapability;
-import xyz.pixelatedw.mineminenomi.data.entity.ability.IAbilityData;
+import xyz.pixelatedw.mineminenomi.data.entity.ability.*;
 import xyz.pixelatedw.mineminenomi.events.passives.*;
 import xyz.pixelatedw.mineminenomi.packets.client.ability.CUseAbilityPacket;
 
@@ -27,17 +25,17 @@ public class CUseAbilityPacketMixin {
          * @reason
          */
         @Overwrite
-        public static void handle(CUseAbilityPacket message, Supplier<NetworkEvent.Context> ctx) {
+        public static void handle(CUseAbilityPacket message, Supplier<net.minecraftforge.network.NetworkEvent.Context> ctx) {
             NetworkEvent.Context context = ctx.get();
 
-            if (context.getDirection() == NetworkDirection.PLAY_TO_SERVER) {
+            if (context.getDirection() == net.minecraftforge.network.NetworkDirection.PLAY_TO_SERVER) {
                 context.enqueueWork(() -> {
-                    PlayerEntity player = context.getSender();
+                    Player player = context.getSender();
                     if (player == null) return;
 
                     player.level.getProfiler().push("abilityUse");
 
-                    IAbilityData abilityDataProps = AbilityDataCapability.get(player);
+                    IAbilityData abilityDataProps = AbilityCapability.get(player).get();
 
                     int targetSlot = ((GetSlot) message).getSlot();
 

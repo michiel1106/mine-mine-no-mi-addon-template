@@ -1,8 +1,8 @@
 package net.bikerboys.minemineextraslots.mixin;
 
+import net.minecraft.resources.*;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
-import net.minecraft.util.ResourceLocation;
 import xyz.pixelatedw.mineminenomi.packets.client.ability.CEquipAbilityPacket;
 
 @Mixin(value = CEquipAbilityPacket.class, remap = false)
@@ -11,5 +11,5 @@ public interface CEquipAbilityPacketAccessor {
     int getSlot();
 
     @Accessor("abilityId")
-    ResourceLocation getAbilityId();
+    net.minecraft.resources.ResourceLocation getAbilityId();
 }
