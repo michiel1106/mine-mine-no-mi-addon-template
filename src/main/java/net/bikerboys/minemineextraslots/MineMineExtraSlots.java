@@ -31,13 +31,13 @@ import org.apache.logging.log4j.Logger;
 import xyz.pixelatedw.mineminenomi.api.abilities.IAbility;
 import xyz.pixelatedw.mineminenomi.api.abilities.components.SlotDecorationComponent;
 import xyz.pixelatedw.mineminenomi.api.helpers.RendererHelper;
+import xyz.pixelatedw.mineminenomi.config.*;
 import xyz.pixelatedw.mineminenomi.data.entity.ability.AbilityDataCapability;
 import xyz.pixelatedw.mineminenomi.data.entity.ability.IAbilityData;
 import xyz.pixelatedw.mineminenomi.data.entity.entitystats.EntityStatsCapability;
 import xyz.pixelatedw.mineminenomi.data.entity.entitystats.IEntityStats;
-import xyz.pixelatedw.mineminenomi.init.ModAbilityKeys;
+import xyz.pixelatedw.mineminenomi.init.*;
 import static xyz.pixelatedw.mineminenomi.init.ModKeybindings.changeAbilityMode;
-import xyz.pixelatedw.mineminenomi.init.ModResources;
 import xyz.pixelatedw.mineminenomi.packets.client.ability.CUseAbilityPacket;
 import xyz.pixelatedw.mineminenomi.packets.client.ability.components.*;
 import xyz.pixelatedw.mineminenomi.wypi.*;
@@ -113,7 +113,7 @@ public class MineMineExtraSlots {
             event.getMatrixStack().translate(0, 0, 100);
 
             // RENDER BOTH COMBAT BARS
-            for (int bar = 0; bar < 2; bar++) {
+            for (int bar = 0; bar < AbilitiesConfig.ABILITY_BARS.get(); bar++) {
 
                 int barYOffset = bar == 0 ? 0 : -26;
 
@@ -127,6 +127,7 @@ public class MineMineExtraSlots {
                     } catch (Exception e) {
                         continue;
                     }
+
 
                     int x = baseX + (i * spacing);
                     int y = baseY + barYOffset;
@@ -252,6 +253,8 @@ public class MineMineExtraSlots {
             }
 
             event.getMatrixStack().popPose();
+
+
             RenderSystem.disableBlend();
         }
 
