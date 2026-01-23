@@ -1,7 +1,7 @@
 package net.bikerboys.minemineextraslots;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import static net.bikerboys.minemineextraslots.client.ClientEvents.EXTRA_SLOT_KEYS;
+
 import net.bikerboys.minemineextraslots.config.AddonConfig;
 import net.bikerboys.minemineextraslots.networking.AddonNetwork;
 import net.bikerboys.minemineextraslots.networking.S2CSyncConfigPacket;
@@ -110,106 +110,144 @@ public class MineMineExtraSlots {
             int activeSlots = MineMineExtraSlots.CLIENT_SLOT_COUNT;
 
             event.getMatrixStack().pushPose();
-
             event.getMatrixStack().translate(0, 0, 100);
 
-            for (int i = 0; i < activeSlots; i++) {
-                int slotId = 80 + i + (abilityData.getCombatBarSet() * 8);
+            // RENDER BOTH COMBAT BARS
+            for (int bar = 0; bar < 2; bar++) {
 
-                IAbility abl = null;
-                try {
-                    abl = abilityData.getEquippedAbility(slotId);
-                } catch (Exception ignored) {}
+                int barYOffset = bar == 0 ? 0 : -26;
 
-                int x = baseX + (i * spacing);
-                int y = baseY;
+                for (int i = 0; i < activeSlots; i++) {
 
-                mc.getTextureManager().bind(ModResources.WIDGETS);
-                RenderSystem.enableBlend();
-                RenderSystem.defaultBlendFunc();
+                    int slotId = 80 + (bar * 8) + i;
 
-                if (abl == null) {
-                    RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-                    mc.gui.blit(event.getMatrixStack(), x, y, 0, 0, 23, 23);
-                }
-
-                else {
-                    boolean hasDisplayText = false;
-                    String displayText = "";
-                    double maxNumber = 1.0;
-                    double number = 0.0;
-                    float slotRed = 1.0F, slotGreen = 1.0F, slotBlue = 1.0F;
-                    float iconRed = 1.0F, iconGreen = 1.0F, iconBlue = 1.0F, iconAlpha = 1.0F;
-
-                    Optional<SlotDecorationComponent> slotDecoComponent = abl.getComponent(ModAbilityKeys.SLOT_DECORATION);
-
-                    if (slotDecoComponent.isPresent()) {
-                        SlotDecorationComponent slotDeco = slotDecoComponent.get();
-                        number = (double) slotDeco.getCurrentValue();
-                        maxNumber = (double) slotDeco.getMaxValue();
-                        hasDisplayText = slotDeco.hasDisplayText();
-                        displayText = slotDeco.getDisplayText();
-
-                        slotRed = slotDeco.getSlotRed();
-                        slotGreen = slotDeco.getSlotGreen();
-                        slotBlue = slotDeco.getSlotBlue();
-
-                        iconRed = slotDeco.getIconRed();
-                        iconGreen = slotDeco.getIconGreen();
-                        iconBlue = slotDeco.getIconBlue();
-                        iconAlpha = slotDeco.getIconAlpha();
-
-                        slotDeco.triggerPreRenderEvents(player, mc, event.getMatrixStack(), (float) x, (float) y, event.getPartialTicks());
-                    }
-
-                    RendererHelper.drawTexturedModalRect(event.getMatrixStack(), (float) x, (float) y, 0.0F, 0.0F, 23.0F, 23.0F, 0.0F, slotRed, slotGreen, slotBlue, 1.0F);
-
-                    double slotHeight = MathHelper.clamp(23.0 - number / maxNumber * 23.0, 0.0, 23.0);
-                    RendererHelper.drawTexturedModalRect(event.getMatrixStack(), (float) x, (float) y, 24.0F, 0.0F, 23.0F, (float) ((int) slotHeight), 0.0F, 1.0F, 1.0F, 1.0F, 1.0F);
-
+                    IAbility abl;
                     try {
-                        RendererHelper.drawIcon(abl.getIcon(player), event.getMatrixStack(), (float) (x + 4), (float) (y + 4), 1.0F, 16.0F, 16.0F, iconRed, iconGreen, iconBlue, iconAlpha);
-                    } catch (Exception ignored) {}
-
-                    if (slotDecoComponent.isPresent()) {
-                        slotDecoComponent.get().triggerPostRenderEvents(player, mc, event.getMatrixStack(), (float) x, (float) y, event.getPartialTicks());
+                        abl = abilityData.getEquippedAbility(slotId);
+                    } catch (Exception e) {
+                        continue;
                     }
 
+                    int x = baseX + (i * spacing);
+                    int y = baseY + barYOffset;
 
-                    event.getMatrixStack().translate(0, 0, 5);
-                    if (number > 0.0) {
-                        String numText = hasDisplayText ? displayText : String.format("%.1f", number / 20.0) + " ";
-                        int textWidth = mc.font.width(numText);
-                        int textX = x + 13 - (textWidth / 2);
-                        int textY = y + 9;
-                        WyHelper.drawStringWithBorder(mc.font, event.getMatrixStack(), numText, textX, textY, WyHelper.hexToRGB("#FFFFFF").getRGB());
-                    }
-                    event.getMatrixStack().translate(0, 0, -5);
-                }
+                    mc.getTextureManager().bind(ModResources.WIDGETS);
+                    RenderSystem.enableBlend();
+                    RenderSystem.defaultBlendFunc();
 
-                                KeyBinding key = (i < EXTRA_SLOT_KEYS.length) ? EXTRA_SLOT_KEYS[i] : null;
-                if (key != null) {
-                    StringBuilder sb = new StringBuilder();
-                    colorTicks = (colorTicks + 1) % 2000;
-                    if (key.isUnbound()) {
-                        sb.append(colorTicks >= 1000 ? "§4" : "§c").append("?");
+                    if (abl == null) {
+                        RenderSystem.color4f(1F, 1F, 1F, 1F);
+                        mc.gui.blit(event.getMatrixStack(), x, y, 0, 0, 23, 23);
                     } else {
-                        sb.append("§7");
-                        String keyName = key.getKey().getDisplayName().getString();
-                        switch (key.getKeyModifier()) {
-                            case ALT: sb.append("a"); break;
-                            case CONTROL: sb.append("c"); break;
-                            case SHIFT: sb.append("s"); break;
+                        boolean hasDisplayText = false;
+                        String displayText = "";
+                        double maxNumber = 1.0;
+                        double number = 0.0;
+
+                        float slotRed = 1F, slotGreen = 1F, slotBlue = 1F;
+                        float iconRed = 1F, iconGreen = 1F, iconBlue = 1F, iconAlpha = 1F;
+
+                        Optional<SlotDecorationComponent> decoOpt =
+                                abl.getComponent(ModAbilityKeys.SLOT_DECORATION);
+
+                        if (decoOpt.isPresent()) {
+                            SlotDecorationComponent deco = decoOpt.get();
+                            number = deco.getCurrentValue();
+                            maxNumber = deco.getMaxValue();
+                            hasDisplayText = deco.hasDisplayText();
+                            displayText = deco.getDisplayText();
+
+                            slotRed = deco.getSlotRed();
+                            slotGreen = deco.getSlotGreen();
+                            slotBlue = deco.getSlotBlue();
+
+                            iconRed = deco.getIconRed();
+                            iconGreen = deco.getIconGreen();
+                            iconBlue = deco.getIconBlue();
+                            iconAlpha = deco.getIconAlpha();
+
+                            deco.triggerPreRenderEvents(player, mc, event.getMatrixStack(), x, y, event.getPartialTicks());
                         }
-                        sb.append(keyName.length() > 2 ? keyName.substring(0, 1).toUpperCase() : keyName.toUpperCase());
+
+                        RendererHelper.drawTexturedModalRect(
+                                event.getMatrixStack(), x, y,
+                                0F, 0F, 23F, 23F,
+                                0F, slotRed, slotGreen, slotBlue, 1F
+                        );
+
+                        double slotHeight = MathHelper.clamp(
+                                23.0 - number / maxNumber * 23.0,
+                                0.0, 23.0
+                        );
+
+                        RendererHelper.drawTexturedModalRect(
+                                event.getMatrixStack(), x, y,
+                                24F, 0F, 23F, (float) slotHeight,
+                                0F, 1F, 1F, 1F, 1F
+                        );
+
+                        try {
+                            RendererHelper.drawIcon(
+                                    abl.getIcon(player),
+                                    event.getMatrixStack(),
+                                    x + 4, y + 4,
+                                    1F, 16F, 16F,
+                                    iconRed, iconGreen, iconBlue, iconAlpha
+                            );
+                        } catch (Exception ignored) {}
+
+                        decoOpt.ifPresent(deco ->
+                                deco.triggerPostRenderEvents(player, mc, event.getMatrixStack(), x, y, event.getPartialTicks())
+                        );
+
+                        if (number > 0.0) {
+                            String text = hasDisplayText
+                                    ? displayText
+                                    : String.format("%.1f", number / 20.0);
+
+                            int textWidth = mc.font.width(text);
+                            WyHelper.drawStringWithBorder(
+                                    mc.font,
+                                    event.getMatrixStack(),
+                                    text,
+                                    x + 13 - (textWidth / 2),
+                                    y + 9,
+                                    WyHelper.hexToRGB("#FFFFFF").getRGB()
+                            );
+                        }
                     }
 
-                    event.getMatrixStack().pushPose();
+                    // ONLY DRAW KEYS FOR ACTIVE BAR
+                    KeyBinding key =
+                            bar == 1
+                                    ? net.bikerboys.minemineextraslots.client.ClientEvents.EXTRA_SLOT_KEYS_BAR_1[i]
+                                    : net.bikerboys.minemineextraslots.client.ClientEvents.EXTRA_SLOT_KEYS_BAR_0[i];
 
-                    event.getMatrixStack().translate(x + 18, y + 16, 10.0);
-                    event.getMatrixStack().scale(0.66F, 0.66F, 0.66F);
-                    WyHelper.drawStringWithBorder(mc.font, event.getMatrixStack(), sb.toString(), 0, 0, -1);
-                    event.getMatrixStack().popPose();
+                    if (key != null) {
+                        StringBuilder sb = new StringBuilder();
+                        colorTicks = (colorTicks + 1) % 2000;
+
+                        if (key.isUnbound()) {
+                            sb.append(colorTicks >= 1000 ? "§4" : "§c").append("?");
+                        } else {
+                            sb.append("§7");
+                            switch (key.getKeyModifier()) {
+                                case ALT: sb.append("a"); break;
+                                case CONTROL: sb.append("c"); break;
+                                case SHIFT: sb.append("s"); break;
+                            }
+                            String k = key.getKey().getDisplayName().getString();
+                            sb.append(k.length() > 2 ? k.substring(0, 1).toUpperCase() : k.toUpperCase());
+                        }
+
+                        event.getMatrixStack().pushPose();
+                        event.getMatrixStack().translate(x + 18, y + 16, 10);
+                        event.getMatrixStack().scale(0.66F, 0.66F, 0.66F);
+                        WyHelper.drawStringWithBorder(mc.font, event.getMatrixStack(), sb.toString(), 0, 0, -1);
+                        event.getMatrixStack().popPose();
+                    }
+
+
                 }
             }
 
@@ -217,7 +255,7 @@ public class MineMineExtraSlots {
             RenderSystem.disableBlend();
         }
 
-        @SubscribeEvent
+        @SubscribeEvent(priority = EventPriority.LOWEST)
         public static void onKeyInput(InputEvent.KeyInputEvent event) {
             Minecraft mc = Minecraft.getInstance();
             PlayerEntity player = mc.player;
@@ -232,36 +270,39 @@ public class MineMineExtraSlots {
 
             int activeSlots = MineMineExtraSlots.CLIENT_SLOT_COUNT;
 
-            for (int i = 0; i < activeSlots; i++) {
-                if (i >= EXTRA_SLOT_KEYS.length || EXTRA_SLOT_KEYS[i] == null) continue;
+            // Loop over both bars (0 and 1)
+            for (int bar = 0; bar < 2; bar++) {
+                KeyBinding[] keys =
+                        bar == 1
+                                ? net.bikerboys.minemineextraslots.client.ClientEvents.EXTRA_SLOT_KEYS_BAR_1
+                                : net.bikerboys.minemineextraslots.client.ClientEvents.EXTRA_SLOT_KEYS_BAR_0;
 
-                if (EXTRA_SLOT_KEYS[i].consumeClick()) {
+                for (int i = 0; i < activeSlots; i++) {
+                    if (i >= keys.length || keys[i] == null) continue;
 
-                    int slotId = 80 + i + (abilityData.getCombatBarSet() * 8);
-                    IAbility abl = abilityData.getEquippedAbility(slotId);
+                    if (keys[i].consumeClick()) {
+                        int slotId = 80 + (bar * 8) + i;
+                        IAbility abl = abilityData.getEquippedAbility(slotId);
 
-                    if (abl != null) {
-                        boolean isOnCooldown = false;
-                        if (abl.hasComponent(ModAbilityKeys.COOLDOWN)) {
-                            isOnCooldown = abl.getComponent(ModAbilityKeys.COOLDOWN).map(comp ->
-                                    comp.isOnCooldown() && comp.getCooldown() > 10.0F
-                            ).orElse(false);
-                        }
+                        if (abl != null) {
+                            boolean isOnCooldown = abl.hasComponent(ModAbilityKeys.COOLDOWN)
+                                    && abl.getComponent(ModAbilityKeys.COOLDOWN)
+                                    .map(c -> c.isOnCooldown() && c.getCooldown() > 10.0F)
+                                    .orElse(false);
 
-                        if (!isOnCooldown) {
-                            if (entityStats.isInCombatMode()) {
+                            if (!isOnCooldown && entityStats.isInCombatMode()) {
                                 if (changeAbilityMode.isDown() && abl.hasComponent(ModAbilityKeys.ALT_MODE)) {
                                     WyNetwork.sendToServer(new CChangeAbilityAltModePacket(slotId));
                                 } else {
                                     WyNetwork.sendToServer(new CUseAbilityPacket(slotId));
                                 }
-                            } else {
-                                player.inventory.selected = i % 8;
                             }
                         }
                     }
                 }
             }
         }
+
+
     }
 }
