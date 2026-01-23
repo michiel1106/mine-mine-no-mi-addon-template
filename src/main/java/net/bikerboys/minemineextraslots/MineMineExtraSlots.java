@@ -86,12 +86,10 @@ public class MineMineExtraSlots {
 
         @SubscribeEvent(priority = EventPriority.LOW)
         public static void renderExtraSlots(RenderGameOverlayEvent.Post event) {
-
             if (event.getType() != RenderGameOverlayEvent.ElementType.TEXT) return;
 
             Minecraft mc = Minecraft.getInstance();
-            if (mc.level == null || mc.player == null) return;
-            if (mc.options.hideGui) return;
+            if (mc.level == null || mc.player == null || mc.options.hideGui) return;
 
             PlayerEntity player = mc.player;
             IEntityStats entityStats = EntityStatsCapability.get(player);
@@ -106,20 +104,22 @@ public class MineMineExtraSlots {
             int baseX = (screenWidth / 2) + MineMineExtraSlots.xOffset;
             int baseY = screenHeight + MineMineExtraSlots.yOffset;
             int spacing = 25;
-
             int activeSlots = MineMineExtraSlots.CLIENT_SLOT_COUNT;
+
+            int maxBars = ClientConfig.INSTANCE.getAbilityBarsOnScreen();
+            maxBars = MathHelper.clamp(maxBars, 1, 2);
+            int activeBar = abilityData.getCombatBarSet(); // current active bar
 
             event.getMatrixStack().pushPose();
             event.getMatrixStack().translate(0, 0, 100);
 
-            // RENDER BOTH COMBAT BARS
-            for (int bar = 0; bar < AbilitiesConfig.ABILITY_BARS.get(); bar++) {
-
-                int barYOffset = bar == 0 ? 0 : -26;
+            for (int barIndex = 0; barIndex < maxBars; barIndex++) {
+                int barYOffset = barIndex == 0 ? 0 : -26;
 
                 for (int i = 0; i < activeSlots; i++) {
-
-                    int slotId = 80 + (bar * 8) + i;
+                    // Determine which abilities to fetch
+                    int abilityBarId = (maxBars == 1) ? activeBar : barIndex; // single-bar mode uses activeBar, two-bar mode uses barIndex
+                    int slotId = 80 + (abilityBarId * 8) + i;
 
                     IAbility abl;
                     try {
@@ -127,7 +127,6 @@ public class MineMineExtraSlots {
                     } catch (Exception e) {
                         continue;
                     }
-
 
                     int x = baseX + (i * spacing);
                     int y = baseY + barYOffset;
@@ -148,8 +147,7 @@ public class MineMineExtraSlots {
                         float slotRed = 1F, slotGreen = 1F, slotBlue = 1F;
                         float iconRed = 1F, iconGreen = 1F, iconBlue = 1F, iconAlpha = 1F;
 
-                        Optional<SlotDecorationComponent> decoOpt =
-                                abl.getComponent(ModAbilityKeys.SLOT_DECORATION);
+                        Optional<SlotDecorationComponent> decoOpt = abl.getComponent(ModAbilityKeys.SLOT_DECORATION);
 
                         if (decoOpt.isPresent()) {
                             SlotDecorationComponent deco = decoOpt.get();
@@ -170,93 +168,73 @@ public class MineMineExtraSlots {
                             deco.triggerPreRenderEvents(player, mc, event.getMatrixStack(), x, y, event.getPartialTicks());
                         }
 
-                        RendererHelper.drawTexturedModalRect(
-                                event.getMatrixStack(), x, y,
-                                0F, 0F, 23F, 23F,
-                                0F, slotRed, slotGreen, slotBlue, 1F
-                        );
+                        RendererHelper.drawTexturedModalRect(event.getMatrixStack(), x, y, 0F, 0F, 23F, 23F, 0F, slotRed, slotGreen, slotBlue, 1F);
 
-                        double slotHeight = MathHelper.clamp(
-                                23.0 - number / maxNumber * 23.0,
-                                0.0, 23.0
-                        );
+                        double slotHeight = MathHelper.clamp(23.0 - number / maxNumber * 23.0, 0.0, 23.0);
 
-                        RendererHelper.drawTexturedModalRect(
-                                event.getMatrixStack(), x, y,
-                                24F, 0F, 23F, (float) slotHeight,
-                                0F, 1F, 1F, 1F, 1F
-                        );
+                        RendererHelper.drawTexturedModalRect(event.getMatrixStack(), x, y, 24F, 0F, 23F, (float) slotHeight, 0F, 1F, 1F, 1F, 1F);
 
                         try {
-                            RendererHelper.drawIcon(
-                                    abl.getIcon(player),
-                                    event.getMatrixStack(),
-                                    x + 4, y + 4,
-                                    1F, 16F, 16F,
-                                    iconRed, iconGreen, iconBlue, iconAlpha
-                            );
+                            RendererHelper.drawIcon(abl.getIcon(player), event.getMatrixStack(), x + 4, y + 4, 1F, 16F, 16F, iconRed, iconGreen, iconBlue, iconAlpha);
                         } catch (Exception ignored) {}
 
-                        decoOpt.ifPresent(deco ->
-                                deco.triggerPostRenderEvents(player, mc, event.getMatrixStack(), x, y, event.getPartialTicks())
-                        );
+                        decoOpt.ifPresent(deco -> deco.triggerPostRenderEvents(player, mc, event.getMatrixStack(), x, y, event.getPartialTicks()));
 
                         if (number > 0.0) {
-                            String text = hasDisplayText
-                                    ? displayText
-                                    : String.format("%.1f", number / 20.0);
-
+                            String text = hasDisplayText ? displayText : String.format("%.1f", number / 20.0);
                             int textWidth = mc.font.width(text);
-                            WyHelper.drawStringWithBorder(
-                                    mc.font,
-                                    event.getMatrixStack(),
-                                    text,
-                                    x + 13 - (textWidth / 2),
-                                    y + 9,
-                                    WyHelper.hexToRGB("#FFFFFF").getRGB()
-                            );
+                            WyHelper.drawStringWithBorder(mc.font, event.getMatrixStack(), text, x + 13 - (textWidth / 2), y + 9, WyHelper.hexToRGB("#FFFFFF").getRGB());
                         }
                     }
 
-                    // ONLY DRAW KEYS FOR ACTIVE BAR
-                    KeyBinding key =
-                            bar == 1
+
+                    boolean renderKeysForThisBar = (maxBars == 2) || (barIndex == 0);
+
+                    if (renderKeysForThisBar && ClientConfig.INSTANCE.showSlotKeybinds()) {
+
+                        KeyBinding key;
+
+                        if (maxBars == 1) {
+                            // Single bar mode: always BAR_0 keys
+                            key = net.bikerboys.minemineextraslots.client.ClientEvents.EXTRA_SLOT_KEYS_BAR_0[i];
+                        } else {
+                            // Two bar mode: barIndex decides
+                            key = barIndex == 1
                                     ? net.bikerboys.minemineextraslots.client.ClientEvents.EXTRA_SLOT_KEYS_BAR_1[i]
                                     : net.bikerboys.minemineextraslots.client.ClientEvents.EXTRA_SLOT_KEYS_BAR_0[i];
-
-                    if (key != null) {
-                        StringBuilder sb = new StringBuilder();
-                        colorTicks = (colorTicks + 1) % 2000;
-
-                        if (key.isUnbound()) {
-                            sb.append(colorTicks >= 1000 ? "§4" : "§c").append("?");
-                        } else {
-                            sb.append("§7");
-                            switch (key.getKeyModifier()) {
-                                case ALT: sb.append("a"); break;
-                                case CONTROL: sb.append("c"); break;
-                                case SHIFT: sb.append("s"); break;
-                            }
-                            String k = key.getKey().getDisplayName().getString();
-                            sb.append(k.length() > 2 ? k.substring(0, 1).toUpperCase() : k.toUpperCase());
                         }
 
-                        event.getMatrixStack().pushPose();
-                        event.getMatrixStack().translate(x + 18, y + 16, 10);
-                        event.getMatrixStack().scale(0.66F, 0.66F, 0.66F);
-                        WyHelper.drawStringWithBorder(mc.font, event.getMatrixStack(), sb.toString(), 0, 0, -1);
-                        event.getMatrixStack().popPose();
+                        if (key != null) {
+                            StringBuilder sb = new StringBuilder();
+                            colorTicks = (colorTicks + 1) % 2000;
+
+                            if (key.isUnbound()) {
+                                sb.append(colorTicks >= 1000 ? "§4" : "§c").append("?");
+                            } else {
+                                sb.append("§7");
+                                switch (key.getKeyModifier()) {
+                                    case ALT: sb.append("a"); break;
+                                    case CONTROL: sb.append("c"); break;
+                                    case SHIFT: sb.append("s"); break;
+                                }
+                                String k = key.getKey().getDisplayName().getString();
+                                sb.append(k.length() > 2 ? k.substring(0, 1).toUpperCase() : k.toUpperCase());
+                            }
+
+                            event.getMatrixStack().pushPose();
+                            event.getMatrixStack().translate(x + 18, y + 16, 10);
+                            event.getMatrixStack().scale(0.66F, 0.66F, 0.66F);
+                            WyHelper.drawStringWithBorder(mc.font, event.getMatrixStack(), sb.toString(), 0, 0, -1);
+                            event.getMatrixStack().popPose();
+                        }
                     }
-
-
                 }
             }
 
             event.getMatrixStack().popPose();
-
-
             RenderSystem.disableBlend();
         }
+
 
         @SubscribeEvent(priority = EventPriority.LOWEST)
         public static void onKeyInput(InputEvent.KeyInputEvent event) {
@@ -272,19 +250,33 @@ public class MineMineExtraSlots {
             if (event.getAction() == 0) return;
 
             int activeSlots = MineMineExtraSlots.CLIENT_SLOT_COUNT;
+            int maxBars = ClientConfig.INSTANCE.getAbilityBarsOnScreen();
+            maxBars = MathHelper.clamp(maxBars, 1, 2);
+            int activeBar = abilityData.getCombatBarSet();
 
-            // Loop over both bars (0 and 1)
-            for (int bar = 0; bar < 2; bar++) {
-                KeyBinding[] keys =
-                        bar == 1
-                                ? net.bikerboys.minemineextraslots.client.ClientEvents.EXTRA_SLOT_KEYS_BAR_1
-                                : net.bikerboys.minemineextraslots.client.ClientEvents.EXTRA_SLOT_KEYS_BAR_0;
+            // Loop over bars
+            for (int barIndex = 0; barIndex < maxBars; barIndex++) {
+
+                KeyBinding[] keys;
+                int abilityBarId;
+
+                if (maxBars == 1) {
+                    // Single bar mode: always use keys from bar 0
+                    keys = net.bikerboys.minemineextraslots.client.ClientEvents.EXTRA_SLOT_KEYS_BAR_0;
+                    abilityBarId = activeBar; // but abilities come from the active bar
+                } else {
+                    // Two bars mode: each bar uses its own keys and abilities
+                    keys = barIndex == 1
+                            ? net.bikerboys.minemineextraslots.client.ClientEvents.EXTRA_SLOT_KEYS_BAR_1
+                            : net.bikerboys.minemineextraslots.client.ClientEvents.EXTRA_SLOT_KEYS_BAR_0;
+                    abilityBarId = barIndex;
+                }
 
                 for (int i = 0; i < activeSlots; i++) {
                     if (i >= keys.length || keys[i] == null) continue;
 
                     if (keys[i].consumeClick()) {
-                        int slotId = 80 + (bar * 8) + i;
+                        int slotId = 80 + (abilityBarId * 8) + i; // abilities use abilityBarId
                         IAbility abl = abilityData.getEquippedAbility(slotId);
 
                         if (abl != null) {
@@ -305,6 +297,7 @@ public class MineMineExtraSlots {
                 }
             }
         }
+
 
 
     }
