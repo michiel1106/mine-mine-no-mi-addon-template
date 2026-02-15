@@ -263,7 +263,7 @@ public class MineMineExtraSlots {
                 if (maxBars == 1) {
                     // Single bar mode: always use keys from bar 0
                     keys = net.bikerboys.minemineextraslots.client.ClientEvents.EXTRA_SLOT_KEYS_BAR_0;
-                    abilityBarId = activeBar; // but abilities come from the active bar
+                    abilityBarId = activeBar;
                 } else {
                     // Two bars mode: each bar uses its own keys and abilities
                     keys = barIndex == 1

@@ -23,10 +23,7 @@ import java.util.function.Supplier;
 @Mixin(value = CEquipAbilityPacket.class, remap = false)
 public class CEquipAbilityPacketMixin {
 
-    /**
-     * @author You
-     * @reason Removes the slot limit check so extra slots (ID 80+) can be equipped.
-     */
+
     @Overwrite
     public static void handle(CEquipAbilityPacket message, Supplier<NetworkEvent.Context> ctx) {
         NetworkEvent.Context context = ctx.get();
@@ -36,17 +33,15 @@ public class CEquipAbilityPacketMixin {
                 try {
                     PlayerEntity player = context.getSender();
                     if (player != null) {
-                        // --- USE ACCESSOR TO GET PRIVATE FIELDS ---
+
                         int slot = ((CEquipAbilityPacketAccessor) message).getSlot();
                         ResourceLocation abilityId = ((CEquipAbilityPacketAccessor) message).getAbilityId();
-                        // ------------------------------------------
 
-                        // REMOVED: if (message.slot <= maxBars) check
+
 
                         IAbilityData abilityDataProps = AbilityDataCapability.get(player);
                         Ability oldAbility = (Ability) abilityDataProps.getEquippedAbility(slot);
 
-                        // Checks regarding the OLD ability (if one was already there)
                         if (oldAbility != null) {
                             if (oldAbility.hasComponent(ModAbilityKeys.COOLDOWN) && ((CooldownComponent) oldAbility.getComponent(ModAbilityKeys.COOLDOWN).get()).isOnCooldown()) return;
                             if (oldAbility.hasComponent(ModAbilityKeys.DISABLE) && ((DisableComponent) oldAbility.getComponent(ModAbilityKeys.DISABLE).get()).isDisabled()) return;
